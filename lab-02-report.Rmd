@@ -146,8 +146,9 @@ the original `mlo_data`, which only has two columns: `date` and
 original tibble.
 
 ```{r make_mlo_seas, include=TRUE}
-# TODO
-# put your R code here
+mlo_seas = mlo_data %>% select (date, co2_seas = co2_filled_seas)
+
+head
 ```
 
 Now plot this with `co2_seas` on the _y_ axis and `date` on the _x_ axis,
@@ -157,6 +158,8 @@ and a linear fit:
 # TODO
 # put your R code here
 # remember to use geom_smooth to include a linear fit.
+
+ggplot(mlo_seas, aes(x = date, y = co2_seas)) + geom_line() + labs( x = "Date", y = "Co2 Concentration (PPM)", title = "Seas Chart")
 ```
 
 Now fit a linear function to find the annual trend of `co2_seas`. Save
@@ -166,6 +169,15 @@ trend in CO~2~ concentration to a variable called `trend_seas`.
 ```{r fit_mlo_seas, include=TRUE}
 # TODO
 # put your R code here to set trend_seas
+fit_seas = lm(co2_seas ~ date, data = mlo_seas)
+
+library(broom)
+tidy(fit_seas)
+
+trend_seas = coef(fit_seas)['date']
+print(trend_seas)
+print(co2_trend)
+
 ```
 
 Compare the trend you fit to the seasonally adjusted data to the trend of the 
@@ -173,8 +185,7 @@ raw `co2_filled` data, from the workecd exampled.
 You can get the trend for the worked example from the variable `co2_fit`,
 which was defined above, in the code chunk `calc_mlo_trend`.
 
-**Answer:** _put the values for the two trends here and discuss how they
-compare._
+**Answer:** The slope of the seasonal trend is slightly higher at `r format_md(trend_seas, digits=3)` compared to the raw data trend (`r format_md(co2_trend, digits=3)`).
 
 ## Exercises with Global Temperature Data from NASA
 
@@ -192,8 +203,9 @@ downloading the CO~2~ data, to avoid downloading the
 file again if it already exists in your `_data` directory.
 
 ```{r download_giss_temp, include=TRUE, message=FALSE}
-# TODO
-# Put your R code here
+if (! file.exists('_data/global_temp_land_sea.csv')) {
+  download.file (giss_url, '_data/global_temp_land_sea.csv')
+}
 ```
 
 * Open the file in Excel or a text editor and look at it.
@@ -226,8 +238,9 @@ the resulting tibble to a variable `giss_temp`
 # Put your R code here to call read_csv and read "global_temp_land_sea.csv"
 # and assign the data to a variable giss_temp
 
-# Then, show the first 5 lines of giss_temp:
-# head(giss_temp, 5)
+giss_temp = read_csv('_data/global_temp_land_sea.csv', col_names = TRUE, skip = 1, col_types = 'idddddddddddddddddd', na = '***')
+
+head(giss_temp)
 ```
 
 Something is funny here: Each row corresponds to a year, but there are columns
@@ -269,8 +282,8 @@ of columns between "Foo" and "Bar" in the tibble `df`, you can call
 Save the result in a variable called `giss_monthly`
 
 ```{r make_giss_monthly, include=TRUE}
-# TODO
-# put your R code here
+giss_monthly = giss_temp %>% select ('Year':'Dec')
+head(giss_monthly)
 ```
 
 Next, it will be difficult to plot all of the data if the months are organized 
@@ -299,8 +312,10 @@ temperature anomaly in that month.
 Store the result in a new variable called `giss_g`
 
 ```{r pivot_longer_giss, include=TRUE}
-# TODO
-# put your R code here to make the variable giss_g
+giss_g = giss_temp %>% pivot_longer(cols = -Year, names_to= 'month', values_to = 'anomaly')
+
+head(giss_g)
+
 ```
 
 Remember how the CO~2~ data had a column `date` that had a year plus a fraction
@@ -346,8 +361,12 @@ Below, use code similar to what I put above to add a new `date` column to
 `giss_g`.
 
 ```{r add_date_to_giss_g, include=TRUE}
-# TODO
-# put your R code here
+giss_g = giss_g %>% 
+  mutate(month = factor(month, levels = month.abb, ordered = TRUE),
+         date = Year + (as.integer(month) - 0.5) / 12) %>% 
+  arrange(date)
+
+head(giss_g)
 ```
 
 Now plot the monthly temperature anomalies versus date:
@@ -361,7 +380,7 @@ Now plot the monthly temperature anomalies versus date:
 # aesthetics for ggplot() and which geometries you want to plot (geom_xxx is not
 # a real geometry).
 # 
-# ggplot( ) + 
+ ggplot(giss_g, aes(x = date, y = anomaly)) + geom_line() + labs(title = 'Temperature Anomalies Over Time', x = 'Year', y = 'Temperature Anomaly')
 # # specify the data and the mappings of variables to plot aesthetics
 # geom_xxx() + 
 # # put the geometries (lines, points, etc) that you want to plot
