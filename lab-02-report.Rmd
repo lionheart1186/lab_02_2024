@@ -5,9 +5,9 @@ author: "put your name here"
 date: 'Lab: Wed. Jan. 17. 2024 Due: Wed. Jan. 24. 2024'
 fontsize: "12pt"
 output:
-  html_document: 
-    toc: true
   word_document:
+    toc: true
+  html_document: 
     toc: true
   github_document:
     toc: true
@@ -50,6 +50,7 @@ if (!dir.exists(data_dir)) dir.create(data_dir)
 
 source(file.path(script_dir, 'utils.R'), chdir = T)
 source(file.path(script_dir, 'modtran.R'), chdir = T)
+source(file.path(script_dir, "format_md.R"), chdir =  TRUE)
 
 mlo_url = str_c("https://scrippsco2.ucsd.edu/assets/data/atmospheric/stations/",
                 "in_situ_co2/monthly/monthly_in_situ_co2_mlo.csv")
@@ -470,7 +471,7 @@ giss_recent = giss_g %>% filter(Year >= 1970)
 recent_trend = lm(anomaly ~ date, data = giss_recent)
 # print the coefficients of the trend.
 library(broom)
-tidy(recent_)
+tidy(recent_trend)
 ```
 
 _Write some text here giving the answer_
