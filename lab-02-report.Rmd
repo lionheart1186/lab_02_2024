@@ -181,7 +181,7 @@ print(co2_trend)
 ```
 
 Compare the trend you fit to the seasonally adjusted data to the trend of the 
-raw `co2_filled` data, from the workecd exampled. 
+raw `co2_filled` data, from the worked exampled. 
 You can get the trend for the worked example from the variable `co2_fit`,
 which was defined above, in the code chunk `calc_mlo_trend`.
 
@@ -405,16 +405,16 @@ and a thick dark blue line for the ten-year sliding average.
 ```{r plot_giss_with_smoothing, include=TRUE, warning = FALSE}
 # TODO
 # put your R code here
-# 
 # Here is an example of the outline of the kind of code you might want to 
 # use, but you will need to fill in the details to make this code work.
 # 
-# giss_g %>% 
-#   mutate( ... ) %>% 
-#   # ^^^ fill in code for "..." in "mutate()" to add a columns called
-#   # "smooth_1" for the one-year smoothed anomaly 
-#   # and "smooth_10" for the ten-year smoothed anomaly.
-#   ggplot(aes( ... )) + 
+ giss_g %>% 
+ mutate(smooth_1 = slide_vec(anomaly, mean, .before = 0, .after = 12)) %>%
+ mutate(smooth_10 = slide_vec(anomaly, mean, .before = 0, .after = 120)) %>%
+ ggplot(aes(x = date)) +
+ geom_line(aes(y = anomaly), color = "blue", alpha = 0.3, size= 0.1) +
+ geom_line(aes(y = smooth_1), color = "darkgreen", alpha = 0.5, size = 0.5) +
+ geom_line(aes(y = smooth_10), color = "darkblue", alpha = 0.7, size = 1)
 #   # ^^^ Then we send the result of mutate to ggplot() where it becomes the 
 #   # data to plot.
 #   # Add code for the aesthetics ("...") to map variables to aesthetics.
@@ -464,11 +464,13 @@ to the monthly anomaly and report it.
 # TODO
 # put your R code here
 # 
-# create giss_recent
+giss_recent = giss_g %>% filter(Year >= 1970)
 # 
 # fit a linear trend to the data using lm()
-# 
+recent_trend = lm(anomaly ~ date, data = giss_recent)
 # print the coefficients of the trend.
+library(broom)
+tidy(recent_)
 ```
 
 _Write some text here giving the answer_
@@ -504,12 +506,12 @@ If we go back to the original `giss_g` data tibble, run the following code:
 # When you are ready to run the code below, you can un-comment it in RStudio
 # by deleting the "#" at the beginning of each line.
 
-# giss_annual = giss_g %>% 
-#    filter(Year >= 1979) %>%
-#    group_by(Year) %>% 
-#    summarize(anomaly = mean(anomaly)) %>%
-#    ungroup() %>%
-#    mutate(date = Year + 0.5, before = Year < 1998)
+ giss_annual = giss_g %>% 
+    filter(Year >= 1979) %>%
+    group_by(Year) %>% 
+    summarize(anomaly = mean(anomaly)) %>%
+    ungroup() %>%
+    mutate(date = Year + 0.5, before = Year < 1998)
 ```
 
 This code groups the giss data by the year, so that one group will have
@@ -534,14 +536,14 @@ help us compare before and after 1998.
 # Here is more example code that you can uncomment and run after you get the 
 # code in the preceding chunks to run properly.
  
-# ggplot(giss_annual, aes(x = date, y = anomaly)) +
-#   geom_line(size = 1) +
-#   geom_point(aes(color = before), size = 2) +
-#   scale_color_manual(values = c("TRUE" = "darkblue", "FALSE" = "darkred"),
-#                      guide = "none") + 
+ggplot(giss_annual, aes(x = date, y = anomaly)) +
+   geom_line(size = 1) +
+   geom_point(aes(color = before), size = 2) +
+   scale_color_manual(values = c("TRUE" = "darkblue", "FALSE" = "darkred"),
+                      guide = "none") + 
 #   # ^^^ color "before" points dark blue, "after" points dark red.
 #   # guide = "none" tells ggplot not to show a legend explaining the colors.
-#   labs(x = "Year", y = "Temperature Anomaly")
+   labs(x = "Year", y = "Temperature Anomaly")
 ```
 
 Does it look as though the red points are not rising as fast as the blue points?
@@ -554,6 +556,12 @@ to select just the date from the years 1998--2011 and pass that to `ggplot`.
 # Put your R code here
 # Filter the giss_annual data to select only the years >= 1998
 # plot the data
+
+giss_after = giss_annual  %>% filter(Year >= 1998)
+
+ggplot(giss_after, aes(x = date, y = anomaly)) +
+   geom_line(size = 1)
+
 ```
 
 Now how does it look?
@@ -569,8 +577,12 @@ split data sets and set the value of this column to "Before" for `giss_before`
 and "After" for `giss_after`.
 
 ```{r split_giss_data, include=TRUE}
-# TODO
-# Put your R code here
+giss_before = giss_annual %>% filter(Year <= 1998) %>%
+mutate(timing = 'Before')
+
+giss_after = giss_annual %>% filter(Year >= 1998) %>%
+mutate(timing = 'After')
+
 ```
 
 Now use `lm` to find the trend in temperature data in `giss_before`
@@ -581,8 +593,11 @@ the value of this column to "Before" for `giss_before` and "After" for
 `giss_after`.
 
 ```{r get_trend_before, include=TRUE}
-# TODO
-# Put your R code here
+# I kind of already did the Before and After addition
+
+giss_trend = lm(anomaly ~ date, data = giss_before)
+library(broom)
+tidy(giss_trend)
 ```
 
 Next, combine the two data frames (or tibbles) into one, 
@@ -597,7 +612,7 @@ can un-comment the code below to combine them.
 # I have commented it because it will cause an error if you knit the document 
 # before you add code to create those data frames.
 # 
-# giss_combined = bind_rows(giss_before, giss_after)
+ giss_combined = bind_rows(giss_before, giss_after)
 ```
 
 Now let's use ggplot to plot `giss_combined`:
@@ -618,6 +633,16 @@ Now let's use ggplot to plot `giss_combined`:
 ```{r plot_combined, include = TRUE, message = FALSE}
 # TODO
 # Put your R code here.
+
+ggplot(giss_combined, aes(x = date, y = anomaly)) +
+   geom_line(size = 1) +
+   geom_point(aes(color = timing), size = 2) +
+   scale_color_manual(values = c("Before" = "darkblue", "After" = "darkred"),
+                      guide = "none") + 
+   geom_smooth(data = giss_before, method='lm', color = 'blue', fill = 'blue', alpha = 0.2, fullrange = TRUE) +
+     labs(x = "Year", y = "Temperature Anomaly")
+
+
 ```
 
 Try this with the parameter `fullrange` set to `TRUE` and `FALSE` in the 
@@ -636,18 +661,18 @@ points that fall below the shaded uncertainty range.
 
 How many of the red points fall below the trend line?
 
-**Answer:** _put your answer here._
+**Answer:** Four points.
 
 How many of the red points fall above the trend line?
 
-**Answer:** _put your answer here._
+**Answer:** The rest of them, which adds up to 21 points. 
 
 If we just look at the years 1998--2012, how many of the red points
 fall above vs. below the trend line?
 
-**Answer:** _put your answer here._
+**Answer:** 9 points. 
 
 What do you conclude about whether global warming paused or stopped for several
 years after 1998?
 
-**Answer:** _put your answer here._
+**Answer:** Global warming fully did not stop after 1998.
